@@ -1,0 +1,243 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>MediGuide AI</title>
+<style>
+:root{--bg:#f4f9fb;--c:#fff;--t:#12303a;--m:#5d7882;--p:#0e8fa8;--g:#19a974;--bd:#dcebf0;--r:#d64545;--w:#f2994a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d1b21;--c:#14272f;--t:#e6f3f6;--m:#93b0b9;--bd:#244049}}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--t);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select{font:inherit;color:inherit}button{cursor:pointer}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--c);border-bottom:1px solid var(--bd);display:flex;gap:8px;align-items:center;padding:10px 16px;flex-wrap:wrap}
+.logo{font-weight:800;font-size:20px;color:var(--p)}nav{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+nav button{border:0;background:none;padding:8px 12px;border-radius:99px;color:var(--m);font-weight:600}nav button.on{background:var(--p);color:#fff}
+.pill{font-size:13px;padding:4px 10px;border-radius:99px;font-weight:700}.live{background:#dff6ec;color:#0b7a52}.off{background:#ffe9d2;color:#a85b0f}
+main{max-width:1100px;margin:auto;padding:16px}h1{font-size:30px;margin:8px 0}h2{margin:20px 0 8px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.card{background:var(--c);border:1px solid var(--bd);border-radius:18px;padding:16px;box-shadow:0 2px 10px #0e8fa81a}
+.hero{background:linear-gradient(135deg,#e0f5f8,#e2f7ec);border-radius:24px;padding:28px;color:#12303a}.hero p{color:#3b5b66}
+.btn{background:var(--p);color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:700}.btn.g{background:var(--g)}.btn.r{background:var(--r)}.btn.o{background:none;border:1.5px solid var(--p);color:var(--p)}.btn.s{padding:6px 10px;font-size:14px}
+input,select{width:100%;padding:11px;border:1.5px solid var(--bd);border-radius:12px;background:var(--c);margin:4px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.m{color:var(--m);font-size:14px}.chip{border:1.5px solid var(--bd);background:var(--c);border-radius:99px;padding:6px 12px;font-size:14px}
+.big{font-size:40px}.st{color:#f5a623}.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:#e0f2f6;color:#0a6c80;font-weight:700}
+.chat{display:flex;flex-direction:column;height:calc(100vh - 170px);min-height:420px}#msgs{flex:1;overflow:auto;padding:8px;display:flex;flex-direction:column;gap:10px}
+.b{max-width:88%;padding:10px 14px;border-radius:16px;background:var(--c);border:1px solid var(--bd)}.u{align-self:flex-end;background:var(--p);color:#fff;border:0}
+.slot{display:block;width:100%;text-align:left;margin:4px 0;border:1.5px solid var(--p);background:none;border-radius:12px;padding:8px 12px;color:var(--t)}.slot:hover{background:var(--p);color:#fff}
+.emg{background:#fde8e8;border:2px solid var(--r);color:#7a1d1d;border-radius:16px;padding:12px}
+.prog{display:flex;gap:4px;font-size:12px;margin:4px 0}.prog span{flex:1;text-align:center;padding:4px;border-radius:8px;background:var(--bd);color:var(--m)}.prog .on{background:var(--g);color:#fff}
+.ok{border:2px solid var(--g);background:#effaf5;color:#12303a;border-radius:16px;padding:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px;border-bottom:1px solid var(--bd);text-align:left}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#12303a;color:#fff;padding:10px 18px;border-radius:99px;z-index:9}
+.mic.rec{background:var(--r);animation:p 1s infinite}@keyframes p{50%{opacity:.5}}
+@media(max-width:700px){nav{order:3;flex-basis:100%;overflow-x:auto;flex-wrap:nowrap}h1{font-size:24px}}
+</style></head><body>
+<header><span class="logo">⚕ MediGuide AI</span><nav id="nav"></nav><span id="st" class="pill"></span></header>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s);
+const LANGS={en:["English","en-IN"],hi:["हिन्दी","hi-IN"],kn:["ಕನ್ನಡ","kn-IN"],te:["తెలుగు","te-IN"],ta:["தமிழ்","ta-IN"],ml:["മലയാളം","ml-IN"],mr:["मराठी","mr-IN"],bn:["বাংলা","bn-IN"],gu:["ગુજરાતી","gu-IN"],pa:["ਪੰਜਾਬੀ","pa-IN"],or:["ଓଡ଼ିଆ","or-IN"],ur:["اردو","ur-IN"]};
+// g greet, a ask, s slots, v verify, n pay, c confirmed, e emergency, x none
+const T={
+en:{g:"Hi! 👋 How can I help you today?",a:"Tell me your concern (fever, tooth pain, knee pain…) or a doctor’s name.",s:"Available appointments — pick one:",v:"We’ll verify your mobile number before confirming.",n:"Confirm patient details and pay the fee (demo).",c:"Appointment confirmed ✓",e:"This may need urgent medical attention. Call the doctor or emergency services (112) now.",x:"No suitable slot right now. You can join the waitlist."},
+hi:{g:"नमस्ते! 👋 मैं आपकी कैसे मदद कर सकता हूँ?",a:"अपनी समस्या बताइए (बुखार, दांत दर्द, घुटने का दर्द…) या डॉक्टर का नाम।",s:"उपलब्ध अपॉइंटमेंट — चुनिए:",v:"पुष्टि से पहले हम आपका मोबाइल नंबर सत्यापित करेंगे।",n:"मरीज़ का विवरण जाँचें और शुल्क दें (डेमो)।",c:"अपॉइंटमेंट पक्का हो गया ✓",e:"यह आपातकालीन हो सकता है। अभी डॉक्टर या 112 को कॉल करें।",x:"अभी कोई स्लॉट नहीं है। आप वेटलिस्ट में जुड़ सकते हैं।"},
+kn:{g:"ನಮಸ್ಕಾರ! 👋 ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?",a:"ನಿಮ್ಮ ತೊಂದರೆ ಹೇಳಿ (ಜ್ವರ, ಹಲ್ಲು ನೋವು, ಮೊಣಕಾಲು ನೋವು…) ಅಥವಾ ವೈದ್ಯರ ಹೆಸರು.",s:"ಲಭ್ಯವಿರುವ ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್‌ಗಳು — ಆಯ್ಕೆಮಾಡಿ:",v:"ದೃಢೀಕರಿಸುವ ಮೊದಲು ನಿಮ್ಮ ಮೊಬೈಲ್ ಸಂಖ್ಯೆಯನ್ನು ಪರಿಶೀಲಿಸುತ್ತೇವೆ.",n:"ರೋಗಿಯ ವಿವರ ಪರಿಶೀಲಿಸಿ ಶುಲ್ಕ ಪಾವತಿಸಿ (ಡೆಮೊ).",c:"ಅಪಾಯಿಂಟ್‌ಮೆಂಟ್ ದೃಢಪಟ್ಟಿದೆ ✓",e:"ಇದು ತುರ್ತು ಆಗಿರಬಹುದು. ಈಗಲೇ ವೈದ್ಯರಿಗೆ ಅಥವಾ 112ಕ್ಕೆ ಕರೆ ಮಾಡಿ.",x:"ಈಗ ಸ್ಲಾಟ್ ಇಲ್ಲ. ವೇಟ್‌ಲಿಸ್ಟ್‌ಗೆ ಸೇರಬಹುದು."},
+te:{g:"నమస్తే! 👋 నేను మీకు ఎలా సహాయం చేయగలను?",a:"మీ సమస్య చెప్పండి (జ్వరం, పంటి నొప్పి, మోకాలి నొప్పి…) లేదా డాక్టర్ పేరు.",s:"అందుబాటులో ఉన్న అపాయింట్‌మెంట్లు — ఎంచుకోండి:",v:"నిర్ధారించే ముందు మీ మొబైల్ నంబర్ ధృవీకరిస్తాము.",n:"రోగి వివరాలు చూసి ఫీజు చెల్లించండి (డెమో).",c:"అపాయింట్‌మెంట్ నిర్ధారించబడింది ✓",e:"ఇది అత్యవసరం కావచ్చు. వెంటనే డాక్టర్‌కు లేదా 112కు కాల్ చేయండి.",x:"ప్రస్తుతం స్లాట్ లేదు. వెయిట్‌లిస్ట్‌లో చేరండి."},
+ta:{g:"வணக்கம்! 👋 நான் எப்படி உதவலாம்?",a:"உங்கள் பிரச்சனையைச் சொல்லுங்கள் (காய்ச்சல், பல் வலி, முழங்கால் வலி…) அல்லது மருத்துவர் பெயர்.",s:"கிடைக்கும் நேரங்கள் — தேர்வு செய்யுங்கள்:",v:"உறுதிப்படுத்தும் முன் உங்கள் மொபைல் எண்ணைச் சரிபார்ப்போம்.",n:"நோயாளி விவரங்களைச் சரிபார்த்துக் கட்டணம் செலுத்துங்கள் (டெமோ).",c:"நேரம் உறுதியானது ✓",e:"இது அவசரமாக இருக்கலாம். உடனே மருத்துவர் அல்லது 112-ஐ அழைக்கவும்.",x:"இப்போது நேரம் இல்லை. காத்திருப்புப் பட்டியலில் சேரலாம்."},
+ml:{g:"നമസ്കാരം! 👋 ഞാൻ എങ്ങനെ സഹായിക്കണം?",a:"നിങ്ങളുടെ പ്രശ്നം പറയൂ (പനി, പല്ലുവേദന, മുട്ടുവേദന…) അല്ലെങ്കിൽ ഡോക്ടറുടെ പേര്.",s:"ലഭ്യമായ അപ്പോയിന്റ്മെന്റുകൾ — തിരഞ്ഞെടുക്കൂ:",v:"സ്ഥിരീകരിക്കും മുമ്പ് മൊബൈൽ നമ്പർ പരിശോധിക്കും.",n:"രോഗിയുടെ വിവരങ്ങൾ പരിശോധിച്ച് ഫീസ് അടയ്ക്കൂ (ഡെമോ).",c:"അപ്പോയിന്റ്മെന്റ് സ്ഥിരീകരിച്ചു ✓",e:"ഇത് അടിയന്തരമായേക്കാം. ഉടൻ ഡോക്ടറെയോ 112 നെയോ വിളിക്കുക.",x:"ഇപ്പോൾ സ്ലോട്ട് ഇല്ല. വെയിറ്റ്‌ലിസ്റ്റിൽ ചേരാം."},
+mr:{g:"नमस्कार! 👋 मी तुम्हाला कशी मदत करू?",a:"तुमची समस्या सांगा (ताप, दातदुखी, गुडघेदुखी…) किंवा डॉक्टरांचे नाव.",s:"उपलब्ध अपॉइंटमेंट — निवडा:",v:"खात्री करण्यापूर्वी तुमचा मोबाइल नंबर तपासू.",n:"रुग्णाचा तपशील तपासा आणि शुल्क भरा (डेमो).",c:"अपॉइंटमेंट निश्चित झाली ✓",e:"हे तातडीचे असू शकते. आत्ताच डॉक्टर किंवा 112 ला कॉल करा.",x:"सध्या स्लॉट नाही. वेटलिस्टमध्ये सामील व्हा."},
+bn:{g:"নমস্কার! 👋 আমি কীভাবে সাহায্য করতে পারি?",a:"আপনার সমস্যা বলুন (জ্বর, দাঁতে ব্যথা, হাঁটুতে ব্যথা…) বা ডাক্তারের নাম।",s:"উপলব্ধ অ্যাপয়েন্টমেন্ট — বেছে নিন:",v:"নিশ্চিত করার আগে আপনার মোবাইল নম্বর যাচাই করব।",n:"রোগীর তথ্য দেখে ফি দিন (ডেমো)।",c:"অ্যাপয়েন্টমেন্ট নিশ্চিত হয়েছে ✓",e:"এটি জরুরি হতে পারে। এখনই ডাক্তার বা ১১২-এ কল করুন।",x:"এখন স্লট নেই। ওয়েটলিস্টে যোগ দিন।"},
+gu:{g:"નમસ્તે! 👋 હું તમને કેવી રીતે મદદ કરી શકું?",a:"તમારી સમસ્યા કહો (તાવ, દાંતનો દુખાવો, ઘૂંટણનો દુખાવો…) અથવા ડૉક્ટરનું નામ.",s:"ઉપલબ્ધ એપોઇન્ટમેન્ટ — પસંદ કરો:",v:"પુષ્ટિ પહેલાં તમારો મોબાઇલ નંબર ચકાસીશું.",n:"દર્દીની વિગતો તપાસી ફી ચૂકવો (ડેમો).",c:"એપોઇન્ટમેન્ટ કન્ફર્મ ✓",e:"આ તાત્કાલિક હોઈ શકે. હમણાં જ ડૉક્ટર અથવા 112 ને કૉલ કરો.",x:"હાલ સ્લોટ નથી. વેઇટલિસ્ટમાં જોડાઓ."},
+pa:{g:"ਸਤ ਸ੍ਰੀ ਅਕਾਲ! 👋 ਮੈਂ ਤੁਹਾਡੀ ਕਿਵੇਂ ਮਦਦ ਕਰਾਂ?",a:"ਆਪਣੀ ਸਮੱਸਿਆ ਦੱਸੋ (ਬੁਖਾਰ, ਦੰਦ ਦਰਦ, ਗੋਡੇ ਦਰਦ…) ਜਾਂ ਡਾਕਟਰ ਦਾ ਨਾਮ।",s:"ਉਪਲਬਧ ਅਪਾਇੰਟਮੈਂਟ — ਚੁਣੋ:",v:"ਪੁਸ਼ਟੀ ਤੋਂ ਪਹਿਲਾਂ ਤੁਹਾਡਾ ਮੋਬਾਈਲ ਨੰਬਰ ਜਾਂਚਾਂਗੇ।",n:"ਮਰੀਜ਼ ਦੇ ਵੇਰਵੇ ਦੇਖੋ ਅਤੇ ਫੀਸ ਭਰੋ (ਡੈਮੋ)।",c:"ਅਪਾਇੰਟਮੈਂਟ ਪੱਕੀ ਹੋ ਗਈ ✓",e:"ਇਹ ਐਮਰਜੈਂਸੀ ਹੋ ਸਕਦੀ ਹੈ। ਹੁਣੇ ਡਾਕਟਰ ਜਾਂ 112 ਨੂੰ ਕਾਲ ਕਰੋ।",x:"ਹੁਣ ਕੋਈ ਸਲਾਟ ਨਹੀਂ। ਵੇਟਲਿਸਟ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ।"},
+or:{g:"ନମସ୍କାର! 👋 ମୁଁ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?",a:"ଆପଣଙ୍କ ସମସ୍ୟା କୁହନ୍ତୁ (ଜ୍ୱର, ଦାନ୍ତ ଯନ୍ତ୍ରଣା, ଆଣ୍ଠୁ ଯନ୍ତ୍ରଣା…) କିମ୍ବା ଡାକ୍ତରଙ୍କ ନାମ।",s:"ଉପଲବ୍ଧ ଆପଏଣ୍ଟମେଣ୍ଟ — ବାଛନ୍ତୁ:",v:"ନିଶ୍ଚିତ କରିବା ପୂର୍ବରୁ ଆପଣଙ୍କ ମୋବାଇଲ ନମ୍ବର ଯାଞ୍ଚ କରିବୁ।",n:"ରୋଗୀ ବିବରଣୀ ଦେଖି ଫି ଦିଅନ୍ତୁ (ଡେମୋ)।",c:"ଆପଏଣ୍ଟମେଣ୍ଟ ନିଶ୍ଚିତ ✓",e:"ଏହା ଜରୁରୀ ହୋଇପାରେ। ବର୍ତ୍ତମାନ ଡାକ୍ତର ବା 112 କୁ କଲ କରନ୍ତୁ।",x:"ବର୍ତ୍ତମାନ ସ୍ଲଟ ନାହିଁ। ଓ୍ୱେଟଲିଷ୍ଟରେ ଯୋଗ ଦିଅନ୍ତୁ।"},
+ur:{g:"السلام علیکم! 👋 میں آپ کی کیسے مدد کروں؟",a:"اپنا مسئلہ بتائیں (بخار، دانت کا درد، گھٹنے کا درد…) یا ڈاکٹر کا نام۔",s:"دستیاب اپائنٹمنٹ — منتخب کریں:",v:"تصدیق سے پہلے آپ کا موبائل نمبر چیک کریں گے۔",n:"مریض کی تفصیل دیکھیں اور فیس ادا کریں (ڈیمو)۔",c:"اپائنٹمنٹ کنفرم ✓",e:"یہ ہنگامی ہو سکتا ہے۔ ابھی ڈاکٹر یا 112 کو کال کریں۔",x:"ابھی کوئی سلاٹ نہیں۔ ویٹ لسٹ میں شامل ہوں۔"}};
+const DEPT={dental:["🦷","Dental Care","Check-up, cleaning, tooth pain, gums, root canal, braces, implants, emergency dental care."],general:["🏥","General Healthcare","Fever, cold, BP, diabetes, thyroid, women’s, men’s, child and elderly health, check-ups."],physio:["🧑‍⚕️","Physiotherapy & Rehab","Back, neck, knee, shoulder pain, sports injury, post-surgery and stroke rehabilitation."],ayur:["🌿","Ayurveda","Panchakarma, herbal consultation, lifestyle and wellness, joint and digestive care."]};
+const HOS={dental:[["SmileCare Dental Hospital",4.7,["Painless treatment, friendly staff.","Clean and punctual."]],["Pearl Dental Clinic",4.5,["Great for braces.","Short waiting time."]]],
+general:[["CityCare Multispeciality Hospital",4.6,["Quick consultation, caring doctors.","Well organised OPD."]],["LifeLine Health Centre",4.4,["Good for family check-ups.","Helpful reception."]]],
+physio:[["MoveWell Physio & Rehab",4.8,["Recovered fast after knee surgery.","Very personalised plans."]],["ActiveLife Rehab Centre",4.5,["Great sports injury care.","Modern equipment."]]],
+ayur:[["Vedanta Ayurveda Hospital",4.7,["Calm, authentic Panchakarma.","Doctors explain everything."]],["Arogya Ayurvedic Centre",4.5,["Helped my digestion issues.","Peaceful atmosphere."]]]};
+// id,name,dept,specialty,phone,fee,exp,hospital idx
+const D=[["d1","Dr. Saraswati Donur","dental","Dentist – General & Cosmetic","8147969656",500,12,0],["d2","Dr. Arjun Mehta","dental","Orthodontist","9000012345",600,9,1],["d3","Dr. Priya Sharma","dental","Endodontist (Root Canal)","9000012346",700,11,0],["d4","Dr. Rahul Desai","dental","Implantologist","9000012347",800,14,1],
+["g1","Dr. Shubhangi Desai","general","General Physician","7676923453",500,15,0],["g2","Dr. Vikram Rao","general","Internal Medicine","9000023451",600,18,1],["g3","Dr. Ananya Iyer","general","Family Medicine","9000023452",500,8,0],["g4","Dr. Rohan Kulkarni","general","Child & Elderly Care","9000023453",550,10,1],
+["p1","Dr. Tasbiya Burli","physio","Orthopaedic Physiotherapist","7353209373",500,9,0],["p2","Dr. Neha Patil","physio","Sports Rehabilitation","9000034561",550,7,1],["p3","Dr. Karan Shah","physio","Neuro Physiotherapist","9000034562",600,12,0],["p4","Dr. Meera Nair","physio","Geriatric Physiotherapist","9000034563",500,10,1],
+["a1","Dr. Lakshmi Pillai","ayur","Ayurvedic Physician","9000045671",500,16,0],["a2","Dr. Govind Rao","ayur","Panchakarma Specialist","9000045672",650,13,1],["a3","Dr. Sunita Joshi","ayur","Herbal & Lifestyle Medicine","9000045673",450,9,0],["a4","Dr. Madhav Bhat","ayur","Ayurvedic Orthopaedics","9000045674",600,11,1]].map(a=>({id:a[0],n:a[1],d:a[2],s:a[3],ph:a[4],fee:a[5],ex:a[6],h:HOS[a[2]][a[7]][0],r:HOS[a[2]][a[7]][1]}));
+const TIMES=["09:00","10:30","11:30","14:00","16:00","17:30"];
+const fmtT=t=>{let[h,m]=t.split(":");h=+h;return(h%12||12)+":"+m+(h<12?" AM":" PM")};
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const dayOf=i=>{const d=new Date();d.setDate(d.getDate()+i);return d};
+const fmtD=k=>new Date(k+"T00:00").toLocaleDateString("en-IN",{weekday:"short",day:"numeric",month:"short"});
+// state (persisted offline)
+let S;try{S=JSON.parse(localStorage.getItem("mg"))}catch(e){}
+S=S||{users:{},cur:null,appts:[],wait:[],q:[]};
+const save=()=>{try{localStorage.setItem("mg",JSON.stringify(S))}catch(e){}};
+const U=()=>S.cur&&S.users[S.cur];const L=()=>(U()&&U().lang)||"en";
+let view="landing",dept="general",msgs=[],flow={},auth={},otp="",online=navigator.onLine,speakOn=true;
+const mine=()=>S.appts.filter(a=>a.p===S.cur);
+function slotState(d,date,t){const i=D.indexOf(d),k=D.length,di=Math.round((new Date(date+"T00:00")-new Date(ymd(new Date())+"T00:00"))/864e5);
+ if(S.appts.some(a=>a.doc===d.id&&a.date===date&&a.time===t&&a.status==="Confirmed"))return"Booked";
+ if((i*7+di*3+TIMES.indexOf(t)*5)%4===0)return"Booked";
+ if(di===0){const n=new Date();if(+t.slice(0,2)*60+ +t.slice(3)<=n.getHours()*60+n.getMinutes())return"Past"}return"Available"}
+function findSlots(docs,o){o=o||{};let out=[];const days=o.date?[o.date]:[0,1,2,3,4,5,6].map(i=>ymd(dayOf(i)));
+ for(const dt of days)for(const d of docs)for(const t of TIMES){if(slotState(d,dt,t)!=="Available")continue;
+ if(o.when){const h=+t.slice(0,2);if(o.when==="m"&&h>=12)continue;if(o.when==="a"&&(h<12||h>=16))continue;if(o.when==="e"&&h<16)continue;if(o.when==="x"&&t!==o.exact)continue}
+ out.push({d,dt,t})}return out}
+// parse
+const RX={dental:/tooth|teeth|dental|gum|cavit|braces|root canal|implant|दांत|ಹಲ್ಲು|పంటి|பல்|പല്ല്|दात|দাঁত|દાંત|ਦੰਦ|ଦାନ୍ତ|دانت/i,
+physio:/knee|back pain|neck|shoulder|joint|physio|sports|fracture|posture|rehab|stroke|घुटन|ಮೊಣಕಾಲು|ಬೆನ್ನು|మోకాలు|முழங்கால்|മുട്ട്|गुडघा|হাঁটু|ઘૂંટણ|ਗੋਡ|ଆଣ୍ଠୁ|گھٹن/i,
+ayur:/ayurved|panchakarma|herbal|आयुर्वेद|ಆಯುರ್ವೇದ|ఆయుర్వేద|ஆயுர்வேத|ആയുർവേദ|আয়ুর্বেদ|આયુર્વેદ|ਆਯੁਰਵੇਦ|ଆୟୁର୍ବେଦ|آیورویدک/i,
+general:/fever|cold|cough|headache|stomach|allergy|skin|diabet|sugar|pressure|thyroid|asthma|check.?up|physician|doctor|बुखार|खांसी|ಜ್ವರ|ಕೆಮ್ಮು|జ్వరం|காய்ச்சல்|പനി|ताप|জ্বর|તાવ|ਬੁਖਾਰ|ଜ୍ୱର|بخار/i,
+emg:/chest pain|can.?t breathe|breathing|unconscious|severe bleeding|stroke symptom|seizure|heart attack|छाती में दर्द|सांस|ಎದೆ ನೋವು|ఛాతీ నొప్పి|நெஞ்சு வலி|നെഞ്ചുവേദന|বুকে ব্যথা|છાતીમાં દુખાવો|ਛਾਤੀ|ଛାତି|سینے میں درد/i};
+function parse(t){const l=t.toLowerCase(),o={};
+ if(RX.emg.test(l))o.emg=1;
+ for(const k of["ayur","dental","physio","general"])if(RX[k].test(l)){o.dept=k;break}
+ const doc=D.find(d=>l.includes(d.n.toLowerCase().replace("dr. ",""))||l.split(/\s+/).some(w=>w.length>3&&d.n.toLowerCase().split(" ").slice(1).includes(w)));if(doc){o.doc=doc;o.dept=doc.d}
+ if(/tomorrow|कल|ನಾಳೆ|రేపు|நாளை|നാളെ|उद्या|আগামীকাল|કાલે|ਕੱਲ|ଆସନ୍ତାକାଲି|کل/.test(l))o.date=ymd(dayOf(1));
+ else if(/today|आज|ಇಂದು|ఈరోజు|இன்று|ഇന്ന്|आज|আজ|આજે|ਅੱਜ|ଆଜି|آج/.test(l))o.date=ymd(dayOf(0));
+ else{const days=["sun","mon","tue","wed","thu","fri","sat"];const i=days.findIndex(x=>new RegExp("\\b"+x).test(l));if(i>=0)for(let k=0;k<7;k++){const d=dayOf(k);if(d.getDay()===i){o.date=ymd(d);break}}}
+ const m=l.match(/(\d{1,2})(?::(\d\d))?\s*(am|pm)/);
+ if(m){let h=+m[1]%12+(m[3]==="pm"?12:0);o.when="x";o.exact=String(h).padStart(2,"0")+":"+(m[2]||"00")}
+ else if(/morning|सुबह|ಬೆಳಿಗ್ಗೆ|ఉదయం|காலை|രാവിലെ|सकाळ|সকাল|સવાર|ਸਵੇਰ|ସକାଳ|صبح/.test(l))o.when="m";
+ else if(/afternoon|दोपहर/.test(l))o.when="a";else if(/evening|शाम|ಸಂಜೆ|సాయంత్రం|மாலை|വൈകുന്നേരം|संध्याकाळ|সন্ধ্যা|સાંજ|ਸ਼ਾਮ|ସନ୍ଧ୍ୟା|شام/.test(l))o.when="e";
+ if(/cancel|रद्द|ರದ್ದು|రద్దు|ரத்து|റദ്ദ്/.test(l))o.cancel=1;if(/reschedule|move my|बदल/.test(l))o.re=1;
+ return o}
+// chat
+function say(r,h,sp){msgs.push({r,h});if(view==="chat")paintChat();if(r==="b"&&speakOn&&"speechSynthesis"in window){let t=sp!==undefined?sp:/^<div class="ok"/.test(h)?"":h.replace(/<div class="prog">.*?<\/div>/,"").split(/<br>|<button|<div|<a /)[0];const tmp=document.createElement("div");tmp.innerHTML=t;t=(tmp.textContent||"").trim();if(t)speak(t.slice(0,240))}}
+function speak(t){try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang=LANGS[L()][1];
+ const done=()=>{if(!speaking)return;speaking=false;micUI();if(micOn)setTimeout(startRec,300)};
+ u.onstart=()=>{if(micOn){speaking=true;try{rec&&rec.abort()}catch(e){}rec=null;micUI()}};u.onend=done;u.onerror=done;
+ speechSynthesis.speak(u)}catch(e){}}
+const prog=n=>'<div class="prog">'+["Understand","Slot","Verify","Details","Confirm"].map((s,i)=>`<span class="${i<n?"on":""}">${i+1} ${s}</span>`).join("")+"</div>";
+function emgCard(doc){const dd=doc||D.find(d=>d.d===dept)||D[0];return`<div class="emg"><b>🚨 ${T[L()].e}</b><div class="row" style="margin-top:8px"><a class="btn r" href="tel:${dd.ph}">📞 CALL ${dd.n}</a><a class="btn o" href="tel:112">CALL LOCAL EMERGENCY (112)</a></div><div class="m">Calls need device/network support.</div></div>`}
+function slotCards(list){return list.slice(0,6).map(s=>`<button class="slot" data-a="pick" data-doc="${s.d.id}" data-date="${s.dt}" data-time="${s.t}"><b>${s.d.n}</b> · ${fmtD(s.dt)} · ${fmtT(s.t)} <span class="m">· ${s.d.h} · ₹${s.d.fee}</span></button>`).join("")}
+function understand(text){const o=parse(text),t=T[L()];
+ if(o.emg){say("b",emgCard(o.doc));return}
+ if(o.cancel){const a=mine().filter(a=>a.status==="Confirmed").pop();say("b",a?`Cancel your appointment with ${D.find(d=>d.id===a.doc).n} on ${fmtD(a.date)} ${fmtT(a.time)}?<br><button class="btn r s" data-a="cancel" data-id="${a.id}">Yes, cancel</button> <button class="btn o s" data-a="noop">Keep it</button>`:"You have no confirmed appointments.");return}
+ if(o.re){const a=mine().filter(a=>a.status==="Confirmed").pop();if(a){flow.re=a.id;o.doc=D.find(d=>d.id===a.doc)}else{say("b","No confirmed appointment to move.");return}}
+ if(o.dept)dept=o.dept;if(o.doc)flow.doc=o.doc;
+ if(!o.dept&&!o.doc&&!flow.doc&&!o.date&&!o.when){say("b",t.a+"<br>"+["I have fever and cough.","I need a dental cleaning.","My knee hurts.","Ayurveda consultation"].map(x=>`<button class="chip" data-a="say" data-t="${x}">${x}</button>`).join(" "));return}
+ const docs=flow.doc?[flow.doc]:D.filter(d=>d.d===dept);
+ let l=findSlots(docs,o),alt=false;
+ if(!l.length&&(o.when||o.date)){l=findSlots(D.filter(d=>d.d===dept),{});alt=true}
+ if(!l.length){say("b",t.x+`<br><button class="btn s" data-a="wait" data-dept="${dept}">Join Waitlist</button>`);return}
+ flow.last=l.slice(0,6);
+ if(!alt&&flow.doc&&(o.when==="x"||/first|any/i.test(text))&&l[0]){pickSlot(l[0]);return}
+ flow.step=2;say("b",prog(2)+(alt?"Requested time isn’t free — here are alternatives:<br>":"")+t.s+slotCards(l)+'<div class="m">Reply with a number (1, 2…), “first available”, or tap a slot.</div>')}
+function pickSlot(s){flow.doc=s.d;flow.date=s.dt;flow.time=s.t;say("b",`${flow.re?"Rescheduling with":"Booking"} <b>${s.d.n}</b> · ${fmtD(s.dt)} · ${fmtT(s.t)}`);afterPick()}
+function send(text){text=text.trim();if(!text)return;say("u",text.replace(/</g,"&lt;"));
+ const l=text.toLowerCase(),yes=/^(yes|y|ok|okay|confirm|pay|book|sure|done)\b/.test(l)||/pay|confirm|book it|book (the |my )?appointment|कन्फर्म|पक्का|ದೃಢ|నిర్ధార|உறுதி|സ്ഥിരീ|निश्चित|নিশ্চিত|કન્ફર્મ|ਪੱਕ|ନିଶ୍ଚିତ|کنفرم|हाँ|हां|ಹೌದು|అవును|ஆம்|അതെ|होय|হ্যাঁ|હા|ਹਾਂ|ହଁ|ہاں/.test(l);
+ if(flow.step===3){const d=text.replace(/\D/g,"");if(otp&&d===otp){U().verified=true;save();say("b","✓ Mobile verified");payCard()}else if(yes){U().verified=true;save();say("b","✓ Demo mode: mobile verified automatically");bookNow()}else say("b","That OTP doesn’t match. Demo OTP: <b>"+otp+"</b>");return}
+ if(flow.step===4){if(yes){bookNow();return}const p=parse(text);if(p.cancel||p.dept||p.doc){flow={};understand(text);return}if(text.length<40){flow.pn=text;payCard();return}}
+ if(flow.step===2&&flow.last){const n=parseInt(l);if(n>=1&&n<=flow.last.length){pickSlot(flow.last[n-1]);return}if(yes||/first|any|earliest/.test(l)){pickSlot(flow.last[0]);return}}
+ understand(text)}
+function afterPick(){const t=T[L()];
+ if(flow.re){rescheduleNow();return}
+ if(!U().verified){flow.step=3;otp=String(1000+Math.floor(Math.random()*9000));say("b",prog(3)+t.v+`<div class="card" style="margin-top:6px">📱 ${U().phone}<br>DEMO OTP (no SMS sent): <b>${otp}</b><input id="oi2" placeholder="Enter OTP" inputmode="numeric"><button class="btn g s" data-a="vfy">Verify</button><div class="m">You can also just type the OTP in the chat.</div></div>`)}
+ else payCard()}
+function payCard(){const d=flow.doc,t=T[L()];flow.step=4;
+ say("b",prog(4)+t.n+`<div class="card" style="margin-top:6px"><b>${d.n}</b> · ${fmtD(flow.date)} ${fmtT(flow.time)}<br><span class="m">Booking for</span><select id="rel"><option>Self</option><option>Parent</option><option>Child</option><option>Spouse</option><option>Other family member</option></select><input id="pn" value="${flow.pn||U().name||""}" placeholder="Patient name"><div class="m">We collect only the information required for your appointment.</div><b>Consultation Fee: ₹${d.fee}</b><br><button class="btn g" data-a="pay">Pay ₹${d.fee} &amp; Confirm Appointment</button><div class="m">Or type “confirm” in the chat (demo payment).</div></div>`)}
+function apptCard(a){const d=D.find(x=>x.id===a.doc);return`<div class="ok"><b>✓ ${T[L()].c}</b><br>Patient: ${a.pn} (${a.rel})<br>Doctor: ${d.n}<br>Hospital: ${d.h}<br>Department: ${DEPT[d.d][1]}<br>Date: ${fmtD(a.date)}<br>Time: ${fmtT(a.time)}<br>Paid: ₹${a.fee} ✓ Payment Successful<div class="row" style="margin-top:8px"><button class="btn s" data-a="ics" data-id="${a.id}">📅 Add to Calendar</button><button class="btn s o" data-a="dl" data-id="${a.id}">Download</button><a class="btn s o" href="tel:${d.ph}">📞 Contact</a><button class="btn s o" data-a="go" data-v="dash">View Appointment</button></div><div class="m">SMS/WhatsApp confirmation simulated in demo mode.</div></div>`}
+function bookNow(){if(!flow.doc||!flow.date){say("b","Please pick a slot first.");return}const gv=id=>{const e=document.querySelectorAll(id);return e.length?e[e.length-1].value.trim():""};const a={id:"A"+Date.now(),p:S.cur,doc:flow.doc.id,date:flow.date,time:flow.time,fee:flow.doc.fee,status:"Confirmed",pn:gv("#pn")||flow.pn||U().name||"Patient",rel:gv("#rel")||"Self",sync:online};
+ if(flow.re){const o=S.appts.find(x=>x.id===flow.re);if(o)o.status="Rescheduled"}
+ if(!U().name){U().name=a.pn}S.appts.push(a);if(!online)S.q.push(a.id);U().prefDoc=flow.doc.id;save();const flow0={doc:flow.doc};flow={};const dd=flow0.doc;say("b","✅ "+T[L()].c+" — ✓ Payment Successful",T[L()].c.replace("✓","")+". "+dd.n+", "+fmtD(a.date)+", "+fmtT(a.time));say("b",prog(5)+apptCard(a),"")}
+// Reschedule: same appointment, same payment — no OTP, no fee, fully offline
+function rescheduleNow(){const a=S.appts.find(x=>x.id===flow.re);
+ if(!a||!flow.doc||!flow.date){say("b","Please pick a new slot first.");return}
+ a.hist=a.hist||[];a.hist.push({doc:a.doc,date:a.date,time:a.time});
+ a.doc=flow.doc.id;a.date=flow.date;a.time=flow.time;a.status="Confirmed";a.rc=(a.rc||0)+1;a.sync=online;
+ if(!online&&!S.q.includes(a.id))S.q.push(a.id);save();const dd=flow.doc;flow={};
+ say("b","✅ Appointment rescheduled — no payment needed","Appointment rescheduled. "+dd.n+", "+fmtD(a.date)+", "+fmtT(a.time)+". No extra payment.");
+ say("b",prog(5)+apptCard(a).replace(/Paid: ₹\d+ ✓ Payment Successful/,"Rescheduled ✓ · Payment already done (₹"+a.fee+") — no extra charge").replace(T[L()].c,"Appointment rescheduled"),"")}
+// ICS
+function ics(a){const d=D.find(x=>x.id===a.doc),s=a.date.replace(/-/g,"")+"T"+a.time.replace(":","")+"00";const eh=String(+a.time.slice(0,2)+(a.time.slice(3)==="30"?1:1)).padStart(2,"0");const e=a.date.replace(/-/g,"")+"T"+eh+a.time.slice(3)+"00";
+ return["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//MediGuide AI//EN","BEGIN:VEVENT","UID:"+a.id+"@mediguide","DTSTAMP:"+s,"DTSTART:"+s,"DTEND:"+e,"SUMMARY:Appointment with "+d.n,"LOCATION:"+d.h,"DESCRIPTION:Patient "+a.pn+" - "+DEPT[d.d][1],"BEGIN:VALARM","TRIGGER:-PT2H","ACTION:DISPLAY","DESCRIPTION:Appointment reminder","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n")}
+function dl(name,txt,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click()}
+// voice
+// Voice: continuous hands-free listening, on-device recognition when the browser supports it (works offline)
+let rec=null,micOn=false,speaking=false,localOK=false,micErr=0;
+const SRC=()=>window.SpeechRecognition||window.webkitSpeechRecognition;
+function micUI(){const b=$("#mic"),h=$("#hint");if(b)b.classList.toggle("rec",micOn);if(h)h.textContent=micOn?(speaking?"Assistant speaking… I’ll listen again in a moment":"🎙 Listening… speak naturally, tap 🎤 to stop"):"Tap microphone and speak"}
+async function prepLocal(r,lang){try{const C=SRC();if(C&&C.available){const o={langs:[lang],processLocally:true},st=await C.available(o);if(st==="unavailable")return false;if(st!=="available"&&C.install)await C.install(o);r.processLocally=true;return true}}catch(e){}return false}
+async function startRec(){const C=SRC();if(!micOn||rec||speaking||!C)return;
+ const r=new C(),lang=LANGS[L()][1];r.lang=lang;r.continuous=true;r.interimResults=true;r.maxAlternatives=1;
+ localOK=await prepLocal(r,lang);if(!micOn||rec||speaking)return;rec=r;
+ r.onstart=()=>{micErr=0;micUI()};
+ r.onresult=e=>{let fin="",tmp="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=t;else tmp+=t}
+  const inp=$("#inp");if(inp)inp.value=tmp;
+  if(fin.trim()){if(inp)inp.value="";send(fin.trim());idle()}};
+ r.onerror=e=>{const c=e.error;if(c==="no-speech"||c==="aborted")return;
+  if(c==="not-allowed"||c==="service-not-allowed"){micOn=false;toast("Microphone permission is blocked — allow it in browser settings, or type your message.")}
+  else if(c==="network"||c==="language-not-supported"){micOn=false;toast(localOK?"Voice language not available — please type.":"This browser needs internet for voice. Use Chrome with an offline speech pack, or type / tap the suggestions.")}
+  else if(++micErr>4){micOn=false;toast("Voice input unavailable — please type.")}
+  micUI()};
+ r.onend=()=>{rec=null;if(micOn&&!speaking)setTimeout(startRec,250);else micUI()};
+ try{r.start()}catch(e){rec=null}}
+function mic(){if(!SRC()){toast("Speech recognition isn’t supported on this browser — please type.");return}
+ micOn=!micOn;if(micOn){micErr=0;try{speechSynthesis.cancel()}catch(e){}speaking=false;startRec()}else{try{rec&&rec.abort()}catch(e){}rec=null}micUI()}
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+// views
+function stars(r){return'<span class="st">'+"★".repeat(Math.round(r))+"</span> "+r}
+function docCard(d){return`<div class="card"><b>${d.n}</b><br><span class="tag">${DEPT[d.d][1]}</span><div class="m">${d.s} · ${d.ex} yrs<br>🏥 ${d.h} ${stars(d.r)}<br>Mon–Sat · ${fmtT(TIMES[0])} – ${fmtT(TIMES[5])}<br>Fee ₹${d.fee}</div><div class="row" style="margin-top:8px"><button class="btn s" data-a="book" data-doc="${d.id}">Book Appointment</button><a class="btn s r" href="tel:${d.ph}">📞 Call ${d.ph}</a></div></div>`}
+function hospCards(k){return HOS[k].map(h=>`<div class="card"><b>🏥 ${h[0]}</b> ${stars(h[1])}<div class="m">${h[2].map(r=>"“"+r+"”").join("<br>")}</div></div>`).join("")}
+function chatPage(){return`<div class="card chat"><div class="row"><b>MediGuide AI Assistant</b><span class="tag">${DEPT[dept][1]}</span><span style="flex:1"></span><select id="lg" style="width:auto">${Object.entries(LANGS).map(([k,v])=>`<option value="${k}" ${k===L()?"selected":""}>${v[0]}</option>`).join("")}</select><button class="chip" data-a="spk">${speakOn?"🔊":"🔇"}</button><button class="btn r s" data-a="emg">🚨 Emergency</button></div><div id="msgs"></div><div class="m" id="hint" style="text-align:center">Tap microphone and speak</div><div class="row" style="flex-wrap:nowrap"><button class="btn mic${micOn?" rec":""}" id="mic" data-a="mic">🎤</button><input id="inp" placeholder="Type your message…" autocomplete="off"><button class="btn" data-a="sendbtn">Send</button></div></div>`}
+function paintChat(){const m=$("#msgs");if(!m)return;m.innerHTML=msgs.map(x=>`<div class="b ${x.r}">${x.h}</div>`).join("");m.scrollTop=m.scrollHeight}
+function openChat(pre){view="chat";flow=pre||flow;if(!msgs.length){say("b",T[L()].g);say("b",T[L()].a+"<br>"+["I have a fever and cough.","I need a dental cleaning.","My knee has been hurting.","Ayurveda consultation","Cancel my appointment"].map(x=>`<button class="chip" data-a="say" data-t="${x}">${x}</button>`).join(" "))}render()}
+function render(){const a=$("#app");$("#st").className="pill "+(online?"live":"off");$("#st").textContent=online?"🟢 Live Mode":"🟠 Offline Demo Mode";
+ $("#nav").innerHTML=view==="landing"||view==="auth"||view==="lang"?"":[["home","Home"],["dept:dental","Dental"],["dept:general","General"],["dept:physio","Physio"],["dept:ayur","Ayurveda"],["chat","AI Assistant"],["dash","Dashboard"],["doc","Admin"],["profile","Profile"]].map(([k,n])=>`<button class="${view===k||k==="dept:"+dept&&view==="dept"?"on":""}" data-a="go" data-v="${k}">${n}</button>`).join("");
+ const f=V[view];a.innerHTML=f?f():"";if(view==="chat"){paintChat();micUI()}window.scrollTo(0,0)}
+const V={
+landing:()=>`<div class="hero"><div class="big">⚕</div><h1>MediGuide AI</h1><p><b>Your intelligent healthcare assistant — from symptoms to appointment.</b><br>Tell us what you need. We’ll help you find the right care.</p><div class="row"><button class="btn" data-a="auth" data-m="login">Login</button><button class="btn g" data-a="auth" data-m="reg">Register</button><button class="btn o" data-a="demo">Continue as Demo Patient</button></div></div><div class="grid" style="margin-top:14px"><div class="card"><b>One AI. Four healthcare services.</b><br>🦷 Dental · 🏥 General · 🧑‍⚕️ Physio · 🌿 Ayurveda</div><div class="card"><b>Book in 5 messages or fewer.</b><br>Understand → Match → Schedule → Verify → Confirm</div><div class="card"><b>Works offline</b><br>Chat, voice, booking, dashboard and calling all run on-device once loaded. Registration is always free.</div></div>`,
+auth:()=>`<div class="card" style="max-width:420px;margin:auto"><h2>${auth.m==="reg"?"Register (free)":"Login"}</h2>${auth.m==="reg"?'<input id="rn" placeholder="Name"><input id="re" placeholder="Email (optional)">':""}<input id="rp" placeholder="Mobile number" inputmode="numeric" maxlength="10"><button class="btn" data-a="otp1">Send OTP</button><div id="ob"></div><div class="m">We collect only the information required for your appointment.</div></div>`,
+lang:()=>`<div class="card" style="max-width:600px;margin:auto"><h2>Choose your language</h2><div class="row">${Object.entries(LANGS).map(([k,v])=>`<button class="chip" style="font-size:18px" data-a="setlang" data-l="${k}">${v[0]}</button>`).join("")}</div></div>`,
+home:()=>`<div class="hero"><h1>Hello${U().name?", "+U().name:""} 👋</h1><p>Book your appointment in 5 messages or fewer.</p><div class="row"><input id="q" placeholder="🔍 Search any doctor, hospital, specialty or service…" style="max-width:520px"><button class="btn" data-a="search">Search</button><button class="btn g" data-a="go" data-v="chat">🎤 Talk to AI</button></div></div><div id="sr"></div><div class="grid" style="margin-top:14px">${Object.entries(DEPT).map(([k,v])=>`<div class="card"><div class="big">${v[0]}</div><b>${v[1]}</b><div class="m">${v[2]}</div><button class="btn s" data-a="go" data-v="dept:${k}" style="margin-top:8px">Explore</button></div>`).join("")}</div>`,
+dept:()=>`<h1>${DEPT[dept][0]} ${DEPT[dept][1]}</h1><p class="m">${DEPT[dept][2]}</p><h2>Doctors</h2><div class="grid">${D.filter(d=>d.d===dept).map(docCard).join("")}</div><h2>Hospitals & Reviews</h2><div class="grid">${hospCards(dept)}</div><button class="btn g" style="margin-top:14px" data-a="go" data-v="chat">Ask the AI about ${DEPT[dept][1]}</button>`,
+chat:chatPage,
+dash:()=>{const m=mine().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)),now=ymd(new Date()),up=m.filter(a=>a.status==="Confirmed"&&a.date>=now),done=m.filter(a=>a.status==="Completed");
+ const row=a=>{const d=D.find(x=>x.id===a.doc);return`<div class="card"><b>${d.n}</b> <span class="tag">${a.status}</span><div class="m">${DEPT[d.d][1]} · ${d.h}<br>${fmtD(a.date)} at ${fmtT(a.time)} · ${a.pn} (${a.rel}) · ₹${a.fee}${a.rc?` · Paid ✓ · Rescheduled ${a.rc}×`:""}</div>${a.status==="Confirmed"?`<div class="row" style="margin-top:6px"><button class="btn s" data-a="ics" data-id="${a.id}">📅 Calendar</button><button class="btn s o" data-a="resch" data-id="${a.id}">Reschedule</button><button class="btn s r" data-a="cancel" data-id="${a.id}">Cancel</button><a class="btn s o" href="tel:${d.ph}">📞 Call</a></div>`:""}</div>`};
+ const nx=up[0],nd=nx&&D.find(x=>x.id===nx.doc);
+ return`<h1>My Dashboard</h1><div class="m">Today: ${new Date().toLocaleString("en-IN",{dateStyle:"full",timeStyle:"short"})}</div>${nx?`<div class="ok" style="margin:10px 0"><b>⏰ Upcoming: ${nd.n}</b> — ${fmtD(nx.date)} at ${fmtT(nx.time)} (${nd.h})<br><b>Preparation:</b> <span class="m">Carry a photo ID and any previous reports/prescriptions. Arrive 10 minutes early. Follow fasting or other instructions only if your clinic provides them.</span></div>`:'<div class="card">No upcoming appointment.</div>'}<h2>Upcoming</h2><div class="grid">${up.map(row).join("")||'<span class="m">None</span>'}</div><h2>History</h2><div class="grid">${m.filter(a=>!up.includes(a)).map(row).join("")||'<span class="m">None</span>'}</div>${done.length?`<h2>Follow-up</h2><div class="card">How was your appointment with ${D.find(x=>x.id===done[done.length-1].doc).n}?<div class="row"><button class="chip" data-a="toast" data-t="Glad to hear it!">Good</button><button class="chip" data-a="fu" data-id="${done[done.length-1].doc}">Need follow-up</button><a class="chip" href="tel:${D.find(x=>x.id===done[done.length-1].doc).ph}">Contact clinic</a></div></div>`:""}<button class="btn g" style="margin-top:12px" data-a="go" data-v="chat">+ New appointment</button>`},
+profile:()=>{const u=U();return`<h1>Profile</h1><div class="card" style="max-width:520px">Name<input id="pn2" value="${u.name||""}">Verified mobile: <b>${u.phone}</b> ${u.verified?"✓":"(not verified)"}<br>Language<select id="pl">${Object.entries(LANGS).map(([k,v])=>`<option value="${k}" ${k===u.lang?"selected":""}>${v[0]}</option>`).join("")}</select>Preferred doctor<select id="pd"><option value="">None</option>${D.map(d=>`<option value="${d.id}" ${d.id===u.prefDoc?"selected":""}>${d.n}</option>`).join("")}</select>Preferred time<select id="pt"><option>Morning</option><option ${u.prefT==="Evening"?"selected":""}>Evening</option></select><div class="row" style="margin-top:8px"><button class="btn" data-a="saveprof">Save</button><button class="btn o" data-a="logout">Logout</button><button class="btn r" data-a="wipe">Delete my data</button></div><div class="m">Session auto-logs out after 15 minutes of inactivity. Raw card details are never stored.</div></div>`},
+doc:()=>{const now=ymd(new Date()),A=S.appts,c=s=>A.filter(a=>a.status===s).length,sel=window.adoc||"g1",d=D.find(x=>x.id===sel);
+ const cnt={};A.forEach(a=>{const k=DEPT[D.find(x=>x.id===a.doc).d][1];cnt[k]=(cnt[k]||0)+1});
+ return`<h1>Clinic Admin & Doctor Dashboard <span class="tag">demo role</span></h1><div class="m">${new Date().toLocaleString("en-IN",{dateStyle:"full",timeStyle:"short"})}</div><div class="grid" style="margin-top:8px">${[["Total",A.length],["Confirmed",c("Confirmed")],["Cancelled",c("Cancelled")],["Completed",c("Completed")],["Waitlisted",S.wait.length],["Paid (₹)",A.filter(a=>a.status!=="Cancelled").reduce((s,a)=>s+a.fee,0)]].map(x=>`<div class="card"><div class="m">${x[0]}</div><b style="font-size:26px">${x[1]}</b></div>`).join("")}</div>
+ <h2>Doctor schedule</h2><select id="ad" style="max-width:340px">${D.map(x=>`<option value="${x.id}" ${x.id===sel?"selected":""}>${x.n} — ${DEPT[x.d][1]}</option>`).join("")}</select><div class="card" style="overflow:auto"><table><tr><th>Date</th>${TIMES.map(t=>`<th>${fmtT(t)}</th>`).join("")}</tr>${[0,1,2,3,4].map(i=>{const dt=ymd(dayOf(i));return`<tr><td>${fmtD(dt)}</td>${TIMES.map(t=>{const s=slotState(d,dt,t);return`<td>${s==="Available"?"🟢":s==="Booked"?"🔴":"⚪"}</td>`}).join("")}</tr>`}).join("")}</table><div class="m">🟢 available 🔴 booked ⚪ past · Demo Availability</div></div>
+ <h2>Appointments</h2><div class="card" style="overflow:auto"><table><tr><th>Patient</th><th>Doctor</th><th>When</th><th>Status</th><th></th></tr>${A.map(a=>`<tr><td>${a.pn}</td><td>${D.find(x=>x.id===a.doc).n}</td><td>${fmtD(a.date)} ${fmtT(a.time)}</td><td>${a.status}</td><td>${a.status==="Confirmed"?`<button class="btn s g" data-a="done" data-id="${a.id}">Complete</button> <button class="btn s r" data-a="cancel" data-id="${a.id}">Cancel</button>`:""}</td></tr>`).join("")||'<tr><td colspan=5 class="m">No appointments yet</td></tr>'}</table></div>
+ <h2>AI analytics</h2><div class="card">Most requested: ${Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(x=>x.join(" ("+")")+")").join(", ").replace(/\(\)/g,"")||"—"}<br>Waitlist: ${S.wait.length} · Queued offline actions: ${S.q.length}</div>`}};
+V.appts=V.dash;
+// search
+function search(q){q=q.toLowerCase();const r=D.filter(d=>(d.n+d.s+d.h+DEPT[d.d].join(" ")).toLowerCase().includes(q)||(RX[d.d]&&RX[d.d].test(q)));
+ $("#sr").innerHTML=`<h2>Results (${r.length})</h2><div class="grid">${r.map(docCard).join("")||'<span class="m">No match — try the AI assistant.</span>'}</div>`}
+// actions
+function act(a,d){if(micOn&&a==="go"&&d.v!=="chat"){micOn=false;try{rec&&rec.abort()}catch(e){}rec=null}switch(a){
+ case"go":if(d.v.startsWith("dept:")){dept=d.v.slice(5);view="dept"}else if(d.v==="chat")openChat();else view=d.v;render();break;
+ case"auth":auth={m:d.m};view="auth";render();break;
+ case"demo":S.users["9876543210"]=S.users["9876543210"]||{phone:"9876543210",name:"Demo Patient",lang:"en",verified:false};S.cur="9876543210";save();view="lang";render();break;
+ case"otp1":{const p=$("#rp").value.replace(/\D/g,"");if(p.length!==10){toast("Enter a 10-digit mobile number");return}
+  if(auth.m==="login"&&!S.users[p]){toast("No account found — please register");return}
+  auth.p=p;auth.n=$("#rn")&&$("#rn").value;auth.e=$("#re")&&$("#re").value;otp=String(1000+Math.floor(Math.random()*9000));
+  $("#ob").innerHTML=`<div class="m">DEMO OTP (no SMS sent): <b>${otp}</b></div><input id="oi" placeholder="Enter OTP" inputmode="numeric"><button class="btn g" data-a="otp2">Verify</button>`;break}
+ case"otp2":if($("#oi").value!==otp){toast("Incorrect OTP");return}
+  S.users[auth.p]=S.users[auth.p]||{phone:auth.p,name:auth.n||"",email:auth.e,lang:"en"};S.users[auth.p].verified=true;S.cur=auth.p;save();view=auth.m==="reg"?"lang":"home";render();break;
+ case"setlang":U().lang=d.l;save();msgs=[];view="home";render();break;
+ case"book":{const doc=D.find(x=>x.id===d.doc);dept=doc.d;msgs=[];flow={doc};openChat(flow);understand("");break}
+ case"say":send(d.t);break;case"sendbtn":{const i=$("#inp");send(i.value);i.value="";break}
+ case"mic":mic();break;case"spk":speakOn=!speakOn;render();break;
+ case"emg":say("b",emgCard(flow.doc));break;
+ case"pick":flow.doc=D.find(x=>x.id===d.doc);flow.date=d.date;flow.time=d.time;say("u",`${flow.doc.n} · ${fmtD(d.date)} ${fmtT(d.time)}`);afterPick();break;
+ case"sendotp":{const p=$("#ph").value.replace(/\D/g,"");if(p.length!==10){toast("Enter 10 digits");return}U().phone!==p&&(S.users[p]=Object.assign(U(),{phone:p}),delete S.users[S.cur],S.cur=p);otp=String(1000+Math.floor(Math.random()*9000));$("#otpbox").innerHTML=`<div class="m">DEMO OTP (no SMS): <b>${otp}</b></div><input id="oi2" placeholder="OTP" inputmode="numeric"><button class="btn g s" data-a="vfy">Verify</button>`;break}
+ case"vfy":if($("#oi2").value!==otp){toast("Incorrect OTP");return}U().verified=true;save();say("u","OTP ✓");payCard();break;
+ case"pay":bookNow();break;
+ case"ics":{const x=S.appts.find(a=>a.id===d.id);dl("appointment.ics",ics(x),"text/calendar");toast("Calendar event with reminder downloaded");break}
+ case"dl":{const x=S.appts.find(a=>a.id===d.id),dd=D.find(y=>y.id===x.doc);dl("confirmation.txt",`MediGuide AI\nPatient: ${x.pn}\nDoctor: ${dd.n}\nHospital: ${dd.h}\nDate: ${x.date}\nTime: ${fmtT(x.time)}\nPaid: Rs ${x.fee}\nStatus: ${x.status}`,"text/plain");break}
+ case"cancel":{const x=S.appts.find(a=>a.id===d.id);x.status="Cancelled";save();toast("Appointment cancelled");if(view==="chat")say("b","Cancelled ✓");else render();break}
+ case"done":S.appts.find(a=>a.id===d.id).status="Completed";save();render();break;
+ case"resch":{const x=S.appts.find(a=>a.id===d.id);msgs=[];dept=D.find(y=>y.id===x.doc).d;openChat({doc:D.find(y=>y.id===x.doc),re:x.id});understand("");break}
+ case"fu":{const doc=D.find(x=>x.id===d.id);msgs=[];dept=doc.d;openChat({doc});say("b","Let’s find a follow-up appointment.");understand("");break}
+ case"wait":S.wait.push({p:S.cur,dept:d.dept});save();toast("Added to waitlist — we’ll alert you when a slot opens");break;
+ case"search":search($("#q").value);break;
+ case"saveprof":{const u=U();u.name=$("#pn2").value;u.lang=$("#pl").value;u.prefDoc=$("#pd").value;u.prefT=$("#pt").value;save();toast("Saved");break}
+ case"logout":S.cur=null;msgs=[];save();view="landing";render();break;
+ case"wipe":if(confirm("Delete all your data on this device?")){delete S.users[S.cur];S.appts=S.appts.filter(a=>a.p!==S.cur);S.cur=null;msgs=[];save();view="landing";render()}break;
+ case"toast":toast(d.t);break}}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-a]");if(b){act(b.dataset.a,b.dataset);idle()}});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="inp"){send(e.target.value);e.target.value=""}});
+document.addEventListener("change",e=>{if(e.target.id==="lg"){U().lang=e.target.value;save();msgs=[];try{rec&&rec.abort()}catch(x){}render();openChat()}if(e.target.id==="ad"){window.adoc=e.target.value;render()}});
+let it;function idle(){clearTimeout(it);it=setTimeout(()=>{if(S.cur){S.cur=null;view="landing";render();toast("Session timed out")}},9e5)}
+addEventListener("online",()=>{online=true;S.q=[];S.appts.forEach(a=>a.sync=true);save();render();toast("Back Online — queued actions synced")});
+addEventListener("offline",()=>{online=false;render();toast("Offline Demo Mode — everything still works")});
+if(S.cur&&U())view="home";render();
+</script></body></html>
